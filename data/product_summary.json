@@ -1,0 +1,106 @@
+[
+    {
+        "product_name": "Camera",
+        "total_sales_amount": 98500
+    },
+    {
+        "product_name": "Charger",
+        "total_sales_amount": 1400
+    },
+    {
+        "product_name": "Graphics Card",
+        "total_sales_amount": 58000
+    },
+    {
+        "product_name": "Hard Disk",
+        "total_sales_amount": 21600
+    },
+    {
+        "product_name": "Headphones",
+        "total_sales_amount": 9500
+    },
+    {
+        "product_name": "Keyboard",
+        "total_sales_amount": 3700
+    },
+    {
+        "product_name": "Laptop",
+        "total_sales_amount": 273225
+    },
+    {
+        "product_name": "Microphone",
+        "total_sales_amount": 8500
+    },
+    {
+        "product_name": "Monitor",
+        "total_sales_amount": 49600
+    },
+    {
+        "product_name": "Mouse",
+        "total_sales_amount": 4220
+    },
+    {
+        "product_name": "Phone",
+        "total_sales_amount": 9500
+    },
+    {
+        "product_name": "Power Bank",
+        "total_sales_amount": 6249
+    },
+    {
+        "product_name": "Printer",
+        "total_sales_amount": 25500
+    },
+    {
+        "product_name": "Projector",
+        "total_sales_amount": 76000
+    },
+    {
+        "product_name": "Router",
+        "total_sales_amount": 11300
+    },
+    {
+        "product_name": "Scanner",
+        "total_sales_amount": 20600
+    },
+    {
+        "product_name": "Smart Tv",
+        "total_sales_amount": 81000
+    },
+    {
+        "product_name": "Smart Watch",
+        "total_sales_amount": 10000
+    },
+    {
+        "product_name": "Speaker",
+        "total_sales_amount": 15500
+    },
+    {
+        "product_name": "Ssd",
+        "total_sales_amount": 28800
+    },
+    {
+        "product_name": "Tablet",
+        "total_sales_amount": 66500
+    },
+    {
+        "product_name": "Tripod",
+        "total_sales_amount": 3700
+    },
+    {
+        "product_name": "Usb Cable",
+        "total_sales_amount": 450
+    },
+    {
+        "product_name": "Usb Hub",
+        "total_sales_amount": 2000
+    },
+    {
+        "product_name": "Watch",
+        "total_sales_amount": 2200
+    },
+    {
+        "product_name": "Webcam",
+        "total_sales_amount": 8300
+    }
+]
