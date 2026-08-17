@@ -1,44 +1,48 @@
-# Stage 1: Ingest raw CSV into raw_orders table
-# This layer preserves original data for reprocessing/debugging
+"""Stage 1: load a CSV file into the raw MySQL layer."""
 
-from config import DB_CONFIG
-import mysql.connector as connection
+from __future__ import annotations
+
 import csv
-conn = connection.connect(**DB_CONFIG)
-cur = conn.cursor()
-try:
-    conn.start_transaction()
-    cur.execute("CREATE TABLE IF NOT EXISTS raw_orders(order_id INTEGER,product varchar(15),amount INTEGER);")
-    cur.execute("TRUNCATE TABLE raw_orders;")
-    conn.commit()
-    success_count = 0
-    failed_count = 0
-    with open("orders_dirty.csv","r") as infile:
-        reader = csv.reader(infile)
-        header = next(reader)
-        expected_cols = 3
-        if len(header) != expected_cols:
-            raise ValueError(f"Schema mismatch: expected {expected_cols} columns, got {len(header)}")
-        conn.start_transaction()
-        for row in reader:
-            try :
-                if len(row) != expected_cols :
-                    raise ValueError("Row does not match expected schema")
-                ord_id = int(row[0])
-                prod = row[1].strip()
-                amt = int(row[2])
-                sql = "INSERT INTO raw_orders(order_id,product,amount) VALUES (%s,%s,%s)"
-                val = (ord_id,prod,amt)
-                cur.execute(sql,val)
-                success_count+=1
-            except Exception as e:
-                failed_count+=1
-                print(f"Skipping bad row {row} | Reason : {e}")
-    infile.close()
-    conn.commit()
-    conn.close()
-    print(f"{success_count} records inserted into raw_orders table!")
-    print(f"{failed_count} records skipped due to exception!")
-except Exception as e:
-    conn.rollback()
-    print(f"Facing Error due to exception : {e}")
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from config import INPUT_CSV_PATH
+from pipeline_utils import create_tables, database_cursor
+
+EXPECTED_COLUMNS = {"order_id", "product", "amount"}
+
+
+def run() -> None:
+    input_path = Path(INPUT_CSV_PATH)
+    if not input_path.exists():
+        raise FileNotFoundError(f"Input file not found: {input_path}")
+
+    inserted = 0
+    rejected = 0
+    with database_cursor() as cursor:
+        create_tables(cursor)
+        cursor.execute("TRUNCATE TABLE raw_orders")
+
+        with input_path.open(newline="", encoding="utf-8") as source:
+            reader = csv.DictReader(source)
+            if reader.fieldnames is None or set(reader.fieldnames) != EXPECTED_COLUMNS:
+                raise ValueError(f"CSV columns must be exactly: {sorted(EXPECTED_COLUMNS)}")
+
+            for line_number, row in enumerate(reader, start=2):
+                try:
+                    cursor.execute(
+                        "INSERT INTO raw_orders (order_id, product, amount) VALUES (%s, %s, %s)",
+                        (int(row["order_id"]), row["product"].strip(), int(row["amount"])),
+                    )
+                    inserted += 1
+                except (TypeError, ValueError) as error:
+                    rejected += 1
+                    print(f"Skipping CSV line {line_number}: {error}")
+
+    print(f"Raw ingestion complete: {inserted} inserted, {rejected} rejected.")
+
+
+if __name__ == "__main__":
+    run()
