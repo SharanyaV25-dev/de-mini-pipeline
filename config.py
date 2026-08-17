@@ -5,6 +5,10 @@ Copy .env.example to .env for local development. Never commit .env.
 
 from os import getenv
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 DB_CONFIG = {
     "host": getenv("MYSQL_HOST", "localhost"),
     "port": int(getenv("MYSQL_PORT", "3306")),
