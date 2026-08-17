@@ -14,4 +14,4 @@ DB_CONFIG = {
 }
 
 INPUT_CSV_PATH = getenv("INPUT_CSV_PATH", "data/orders_dirty.csv")
-OUTPUT_JSON_PATH = getenv("OUTPUT_JSON_PATH", "data/product_summary.json")
+OUTPUT_JSON_PATH = getenv("OUTPUT_JSON_PATH", "data/output/product_summary.json")
