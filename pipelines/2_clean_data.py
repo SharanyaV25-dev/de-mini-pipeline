@@ -1,57 +1,45 @@
-# Stage 2: Validate business rules and split into clean vs error tables
-# Business rules:
-# - order_id must be 3 digits
-# - product must be non-empty
-# - amount must be positive
+"""Stage 2: validate raw orders and split valid and rejected records."""
 
-from config import DB_CONFIG
-import mysql.connector as connection
-conn = connection.connect(**DB_CONFIG)
-cur = conn.cursor()
-try:
-   conn.start_transaction()
-   cur.execute("CREATE TABLE IF NOT EXISTS clean_orders(order_id INT PRIMARY KEY,product TEXT,amount INT);")
-   cur.execute("CREATE TABLE IF NOT EXISTS error_orders(order_id INT PRIMARY KEY,product VARCHAR(15),amount INT, error_reason VARCHAR(50));")
-   cur.execute("TRUNCATE TABLE clean_orders;")
-   cur.execute("TRUNCATE TABLE error_orders;")
-   conn.commit()
-   conn.start_transaction()
-   cur.execute("SELECT * FROM raw_orders;")
-   results = cur.fetchall()
-   raw_recs = len(results)
-   clean_recs = 0
-   error_recs = 0
-   for row in results:
-       try:
-           id = row[0]
-           prd = row[1].strip().title()
-           amt = row[2] 
-           if len(str(id)) != 3:
-               reason = "INVALID_ID"
-           elif prd is None or prd.strip() == "":
-               reason = "MISSING_PRODUCT"
-           elif amt <= 0:
-               reason = "NEGATIVE_OR_ZERO_AMOUNT"
-           else:
-               reason = "UNKNOWN_ERROR"           
-           if (id>0 and prd is not None and prd.strip()!="" and amt>0):
-               sql = "INSERT IGNORE INTO clean_orders(order_id,product,amount) VALUES(%s,%s,%s);"
-               val = (id,prd,amt)
-               cur.execute(sql,val)
-               clean_recs+=1
-           else :
-               sql = "INSERT IGNORE INTO error_orders(order_id,product,amount,error_reason) VALUES(%s,%s,%s,%s);"
-               val = (id,prd,amt,reason)
-               cur.execute(sql,val)
-               error_recs+=1
-       except Exception as e:
-           failed_count+=1
-           print(f"Skipping bad row {row} | Reason : {e}")     
-   conn.commit()
-   conn.close()
-   print(f"Total no. of raw records : {raw_recs}")
-   print(f"{clean_recs} clean records inserted in clean_orders table!")
-   print(f"{error_recs} error records inserted in error_orders table!")
-except Exception as e:
-    conn.rollback()
-    print(f"Facing Error due to exception : {e}")      
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from pipeline_utils import create_tables, database_cursor, validation_error
+
+
+def run() -> None:
+    clean_count = 0
+    reject_count = 0
+
+    with database_cursor() as cursor:
+        create_tables(cursor)
+        cursor.execute("TRUNCATE TABLE clean_orders")
+        cursor.execute("TRUNCATE TABLE error_orders")
+        cursor.execute("SELECT order_id, product, amount FROM raw_orders")
+
+        for order_id, product, amount in cursor.fetchall():
+            normalized_product = product.strip().title() if product else product
+            error = validation_error(order_id, normalized_product, amount)
+
+            if error is None:
+                cursor.execute(
+                    "INSERT INTO clean_orders (order_id, product, amount) VALUES (%s, %s, %s)",
+                    (order_id, normalized_product, amount),
+                )
+                clean_count += 1
+            else:
+                cursor.execute(
+                    """INSERT INTO error_orders (order_id, product, amount, error_reason)
+                    VALUES (%s, %s, %s, %s)""",
+                    (order_id, normalized_product, amount, error),
+                )
+                reject_count += 1
+
+    print(f"Validation complete: {clean_count} clean, {reject_count} rejected.")
+
+
+if __name__ == "__main__":
+    run()
