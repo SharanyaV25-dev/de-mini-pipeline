@@ -1,23 +1,34 @@
-# Stage 4: Data Export Layer (JSON)
-# Purpose:
-# - Export final aggregated data to JSON for downstream consumption
-# - This can be used by dashboards, APIs, or reporting tools
+"""Stage 4: export the product summary to a JSON output contract."""
 
-# Output Contract:
-# - Each JSON record represents one product and its total sales
-# - Fields: product_name, total_sales_amount
+from __future__ import annotations
 
-from config import DB_CONFIG
-import mysql.connector as connection
-import csv,json
-conn = connection.connect(**DB_CONFIG)
-cur = conn.cursor(dictionary = True)
-conn.start_transaction()
-cur.execute("select * from product_aggregation;")
-result_set = cur.fetchall()
-json_output = json.dumps(result_set, indent=4)
-with open("product_aggregation.json","w") as file:
-    file.write(json_output)
-    print("product_aggregation.json file successfully created!!!")
-conn.close()
-file.close()
+import json
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from config import OUTPUT_JSON_PATH
+from pipeline_utils import database_cursor
+
+
+def run() -> None:
+    output_path = Path(OUTPUT_JSON_PATH)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with database_cursor(dictionary=True) as cursor:
+        cursor.execute(
+            """SELECT product_name, total_sales_amount
+            FROM product_aggregation
+            ORDER BY product_name"""
+        )
+        rows = cursor.fetchall()
+
+    with output_path.open("w", encoding="utf-8") as output_file:
+        json.dump(rows, output_file, indent=2)
+
+    print(f"Export complete: {len(rows)} records written to {output_path}.")
+
+
+if __name__ == "__main__":
+    run()
