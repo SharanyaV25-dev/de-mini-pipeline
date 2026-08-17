@@ -1,8 +1,17 @@
-DB_HOST = "your_host"
-DB_PORT = 5432
-DB_NAME = "your_database"
-DB_USER = "your_username"
-DB_PASSWORD = "your_password"
+"""Runtime configuration read from environment variables.
 
-INPUT_CSV_PATH = "data/raw/input.csv"
-OUTPUT_JSON_PATH = "data/output/final.json"
+Copy .env.example to .env for local development. Never commit .env.
+"""
+
+from os import getenv
+
+DB_CONFIG = {
+    "host": getenv("MYSQL_HOST", "localhost"),
+    "port": int(getenv("MYSQL_PORT", "3306")),
+    "user": getenv("MYSQL_USER", "pipeline_user"),
+    "password": getenv("MYSQL_PASSWORD", "pipeline_password"),
+    "database": getenv("MYSQL_DATABASE", "orders_pipeline"),
+}
+
+INPUT_CSV_PATH = getenv("INPUT_CSV_PATH", "data/orders_dirty.csv")
+OUTPUT_JSON_PATH = getenv("OUTPUT_JSON_PATH", "data/product_summary.json")
